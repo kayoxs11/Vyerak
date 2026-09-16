@@ -2,12 +2,15 @@
 // VYERAK.DEV — interactions
 // ===========================================================
 
-document.getElementById('year').textContent = new Date().getFullYear();
+const yearEl = document.getElementById('year');
+if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- mobile nav ---------- */
 const navToggle = document.getElementById('nav-toggle');
 const mainNav = document.getElementById('main-nav');
-if (navToggle) {
+if (navToggle && mainNav) {
   navToggle.addEventListener('click', () => {
     const isOpen = mainNav.classList.toggle('open');
     navToggle.setAttribute('aria-expanded', String(isOpen));
@@ -20,9 +23,8 @@ if (navToggle) {
   });
 }
 
-/* ---------- code typewriter ---------- */
-/* ---------- código + output sincronizado ---------- */
-const termLines = [
+/* ---------- hero: code typed on the left, output synced on the right ---------- */
+const codeLines = [
   { code: '>>> print("Seja bem-vindo")', output: 'Seja bem-vindo' },
   { code: '>>> print("à Vyerak.dev")', output: 'à Vyerak.dev' },
   { code: '>>> projetos = ["sites", "sistemas"]', output: null },
@@ -33,56 +35,49 @@ const termLines = [
   { code: '>>> print("Vamos construir?")', output: 'Vamos construir?' },
 ];
 
-const codeEl = document.getElementById('code-body') || document.getElementById('terminal-body');
-const previewEl = document.getElementById('preview-body');
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function typeSynced() {
+(function typeCodeAndPreview() {
+  const codeEl = document.getElementById('code-body');
+  const previewEl = document.getElementById('preview-body');
   if (!codeEl) return;
 
-  // se não existir preview, só digita o código
+  const codeOnly = codeLines.filter(l => l.code).map(l => l.code).join('\n');
+
   if (!previewEl) {
-    codeEl.textContent = termLines.filter(l => l.code).map(l => l.code).join('\n');
+    codeEl.textContent = codeOnly;
     return;
   }
 
   if (prefersReducedMotion) {
-    codeEl.innerHTML = termLines.filter(l => l.code).map(l => l.code).join('\n');
-    previewEl.innerHTML = termLines.filter(l => l.output).map(l => `<div class="output-line">${l.output}</div>`).join('');
+    codeEl.textContent = codeOnly;
+    previewEl.innerHTML = codeLines
+      .filter(l => l.output)
+      .map(l => `<div class="output-line" style="opacity:1;transform:none">${l.output}</div>`)
+      .join('');
     return;
   }
 
   codeEl.innerHTML = '';
   previewEl.innerHTML = '';
-
   let i = 0;
 
   function next() {
-    if (i >= termLines.length) {
-      setTimeout(() => {
-        codeEl.innerHTML = '';
-        previewEl.innerHTML = '';
-        i = 0;
-        next();
-      }, 2800);
+    if (i >= codeLines.length) {
+      setTimeout(() => { codeEl.innerHTML = ''; previewEl.innerHTML = ''; i = 0; next(); }, 2800);
       return;
     }
 
-    const line = termLines[i];
+    const line = codeLines[i];
 
-    // digita o código
     if (line.code) {
       const div = document.createElement('div');
       codeEl.appendChild(div);
       let c = 0;
-
-      function typeChar() {
+      (function typeChar() {
         c++;
         div.textContent = line.code.slice(0, c);
         if (c < line.code.length) {
           setTimeout(typeChar, 18);
         } else {
-          // quando termina de digitar, mostra o output
           if (line.output) {
             const out = document.createElement('div');
             out.className = 'output-line';
@@ -92,10 +87,8 @@ function typeSynced() {
           i++;
           setTimeout(next, 350);
         }
-      }
-      typeChar();
+      })();
     } else if (line.output) {
-      // só output (tipo resultado do for)
       const out = document.createElement('div');
       out.className = 'output-line';
       out.textContent = line.output;
@@ -107,118 +100,179 @@ function typeSynced() {
       next();
     }
   }
-
   next();
-}
+})();
 
-typeSynced();
-/* ---------- particle network background ---------- */
-(function particleNetwork() {
+/* ---------- circuit-board background (traces + traveling light pulses) ---------- */
+(function circuitBoard() {
   const canvases = document.querySelectorAll('.net-canvas');
   if (!canvases.length) return;
 
+  function buildTraces(width, height) {
+    const cell = 46;
+    const cols = Math.max(4, Math.floor(width / cell));
+    const rows = Math.max(4, Math.floor(height / cell));
+    const count = Math.max(8, Math.min(26, Math.floor((width * height) / 42000)));
+    const traces = [];
+
+    for (let i = 0; i < count; i++) {
+      let x = Math.floor(Math.random() * cols) * cell;
+      let y = Math.floor(Math.random() * rows) * cell;
+      const points = [{ x, y }];
+      const steps = 3 + Math.floor(Math.random() * 5);
+      let horizontal = Math.random() < 0.5;
+
+      for (let s = 0; s < steps; s++) {
+        const len = (1 + Math.floor(Math.random() * 3)) * cell;
+        if (horizontal) x += Math.random() < 0.5 ? -len : len;
+        else y += Math.random() < 0.5 ? -len : len;
+        x = Math.min(Math.max(x, 0), cols * cell);
+        y = Math.min(Math.max(y, 0), rows * cell);
+        points.push({ x, y });
+        horizontal = !horizontal;
+      }
+
+      const segLens = [];
+      let total = 0;
+      for (let p = 0; p < points.length - 1; p++) {
+        const l = Math.hypot(points[p + 1].x - points[p].x, points[p + 1].y - points[p].y);
+        segLens.push(l);
+        total += l;
+      }
+
+      traces.push({ points, segLens, total, offset: Math.random(), speed: 0.05 + Math.random() * 0.06 });
+    }
+    return traces;
+  }
+
+  function pointAtT(trace, t) {
+    const target = t * trace.total;
+    let acc = 0;
+    for (let i = 0; i < trace.segLens.length; i++) {
+      const segLen = trace.segLens[i];
+      if (target <= acc + segLen || i === trace.segLens.length - 1) {
+        const segT = segLen === 0 ? 0 : (target - acc) / segLen;
+        const p0 = trace.points[i], p1 = trace.points[i + 1];
+        return { x: p0.x + (p1.x - p0.x) * segT, y: p0.y + (p1.y - p0.y) * segT };
+      }
+      acc += segLen;
+    }
+    return trace.points[trace.points.length - 1];
+  }
+
   canvases.forEach((canvas) => {
     const ctx = canvas.getContext('2d');
-    let width, height, particles;
-    const DENSITY = 14000; // px² per particle
-    const LINK_DIST = 130;
+    // secondary pages / the subtler Processo canvas read a touch dimmer so text stays legible
+    const intensity = canvas.classList.contains('net-canvas--subtle') ? 0.5
+      : canvas.closest('.page-head') ? 0.7
+      : 1;
+    let width, height, traces;
 
     function resize() {
       const rect = canvas.parentElement.getBoundingClientRect();
       width = canvas.width = rect.width;
       height = canvas.height = rect.height;
-      const count = Math.max(24, Math.min(90, Math.floor((width * height) / DENSITY)));
-      particles = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-      }));
+      traces = buildTraces(width, height);
     }
 
-    function step() {
-      ctx.clearRect(0, 0, width, height);
-      for (const p of particles) {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0 || p.x > width) p.vx *= -1;
-        if (p.y < 0 || p.y > height) p.vy *= -1;
-      }
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i], b = particles[j];
-          const dx = a.x - b.x, dy = a.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < LINK_DIST) {
-            ctx.strokeStyle = `rgba(47, 184, 214, ${0.16 * (1 - dist / LINK_DIST)})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-          }
-        }
-      }
-      for (const p of particles) {
+    function drawStatic() {
+      ctx.strokeStyle = 'rgba(6, 137, 161, 0.5)';
+      ctx.lineWidth = 1.4;
+      ctx.fillStyle = 'rgba(47, 184, 214, 0.7)';
+
+      traces.forEach((trace) => {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(6, 137, 161, 0.9)';
+        trace.points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+        ctx.stroke();
+
+        trace.points.forEach((p, i) => {
+          const r = i === 0 || i === trace.points.length - 1 ? 3 : 2;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+    }
+
+    function drawPulses(timeSec) {
+      traces.forEach((trace) => {
+        const t = (timeSec * trace.speed + trace.offset) % 1;
+        const pos = pointAtT(trace, t);
+        ctx.beginPath();
+        ctx.fillStyle = '#2FB8D6';
+        ctx.shadowColor = 'rgba(47, 184, 214, 0.95)';
+        ctx.shadowBlur = 10;
+        ctx.arc(pos.x, pos.y, 2.6, 0, Math.PI * 2);
         ctx.fill();
-      }
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    function step(ts) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalAlpha = intensity;
+      drawStatic();
+      drawPulses(ts / 1000);
+      ctx.globalAlpha = 1;
       if (!prefersReducedMotion) requestAnimationFrame(step);
     }
 
     resize();
     window.addEventListener('resize', resize);
-    step(); // first frame always drawn; loop continues unless reduced motion
+
+    if (prefersReducedMotion) {
+      ctx.globalAlpha = intensity;
+      drawStatic();
+      ctx.globalAlpha = 1;
+    } else {
+      requestAnimationFrame(step);
+    }
   });
 })();
 
-/* ---------- contact form (front-end only placeholder) ---------- */
+/* ---------- contact form → opens WhatsApp with the message pre-filled ---------- */
+const WHATSAPP_NUMBER = '558196678368';
 const form = document.getElementById('contact-form');
 if (form) {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    alert('Formulário ainda não conectado a um serviço de envio. Veja o README do projeto para instruções de configuração (ex: Formspree, EmailJS ou uma rota de API).');
+    const data = new FormData(form);
+    const nome = (data.get('nome') || '').toString().trim();
+    const email = (data.get('email') || '').toString().trim();
+    const telefone = (data.get('telefone') || '').toString().trim();
+    const mensagem = (data.get('mensagem') || '').toString().trim();
+
+    const linhas = [
+      `Olá! Meu nome é ${nome || '(não informado)'}.`,
+      email ? `E-mail: ${email}` : null,
+      telefone ? `Telefone: ${telefone}` : null,
+      '',
+      mensagem,
+    ].filter((l) => l !== null);
+
+    const texto = encodeURIComponent(linhas.join('\n'));
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${texto}`, '_blank', 'noopener');
   });
 }
 
-/* ---------- scroll reveal animations ---------- */
-(function () {
-  const reveals = document.querySelectorAll('.reveal');
-  if (!reveals.length) return;
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        // opcional: para de observar depois que animou
-        observer.unobserve(entry.target);
-      }
-    });
-  }, {
-    threshold: 0.12,
-    rootMargin: '0px 0px -40px 0px'
-  });
-
-  reveals.forEach(el => observer.observe(el));
-})();
-
-/* ---------- scroll reveal (incluindo laterais) ---------- */
-(function () {
+/* ---------- scroll reveal animations (.reveal, .reveal-from-left, .reveal-from-right) ---------- */
+(function scrollReveal() {
   const reveals = document.querySelectorAll('.reveal, .reveal-from-left, .reveal-from-right');
   if (!reveals.length) return;
 
+  if (prefersReducedMotion) {
+    reveals.forEach((el) => el.classList.add('is-visible'));
+    return;
+  }
+
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.add('is-visible');
         observer.unobserve(entry.target);
       }
     });
-  }, {
-    threshold: 0.15,
-    rootMargin: '0px 0px -50px 0px'
-  });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 
-  reveals.forEach(el => observer.observe(el));
+  reveals.forEach((el) => observer.observe(el));
 })();
