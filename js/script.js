@@ -35,18 +35,17 @@ visualStyle.textContent = `
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
-  .hero-slogan-accent {
-    color: var(--teal-light);
-  }
-  .net-canvas {
-    pointer-events: none;
-  }
+  .hero-slogan-accent { color: var(--teal-light); }
+  .net-canvas { pointer-events: none; }
+  .section { position: relative; overflow: hidden; }
+  .section > .wrap { position: relative; z-index: 2; }
+  .section > .net-canvas { z-index: 0; }
+  .hero > .net-canvas, .page-head > .net-canvas, .process-section > .net-canvas { z-index: 0; }
 `;
 document.head.appendChild(visualStyle);
 
-/* Put the same circuit-board animation on every main section that does not
-   already have one. The original per-section animation is intentionally kept
-   intact so the visual language remains exactly the same as the reference. */
+/* Keep the original circuit-board animation, but extend it to every main
+   section so the background continues through the whole experience. */
 document.querySelectorAll('main > section').forEach(section => {
   if (!section.querySelector(':scope > .net-canvas')) {
     const canvas = document.createElement('canvas');
@@ -88,35 +87,22 @@ const codeLines = [
   const codeEl = document.getElementById('code-body');
   const previewEl = document.getElementById('preview-body');
   if (!codeEl) return;
-
   const codeOnly = codeLines.filter(l => l.code).map(l => l.code).join('\n');
-
-  if (!previewEl) {
-    codeEl.textContent = codeOnly;
-    return;
-  }
-
+  if (!previewEl) { codeEl.textContent = codeOnly; return; }
   if (prefersReducedMotion) {
     codeEl.textContent = codeOnly;
-    previewEl.innerHTML = codeLines
-      .filter(l => l.output)
-      .map(l => `<div class="output-line" style="opacity:1;transform:none">${l.output}</div>`)
-      .join('');
+    previewEl.innerHTML = codeLines.filter(l => l.output).map(l => `<div class="output-line" style="opacity:1;transform:none">${l.output}</div>`).join('');
     return;
   }
-
   codeEl.innerHTML = '';
   previewEl.innerHTML = '';
   let i = 0;
-
   function next() {
     if (i >= codeLines.length) {
       setTimeout(() => { codeEl.innerHTML = ''; previewEl.innerHTML = ''; i = 0; next(); }, 2800);
       return;
     }
-
     const line = codeLines[i];
-
     if (line.code) {
       const div = document.createElement('div');
       codeEl.appendChild(div);
@@ -124,9 +110,8 @@ const codeLines = [
       (function typeChar() {
         c++;
         div.textContent = line.code.slice(0, c);
-        if (c < line.code.length) {
-          setTimeout(typeChar, 18);
-        } else {
+        if (c < line.code.length) setTimeout(typeChar, 18);
+        else {
           if (line.output) {
             const out = document.createElement('div');
             out.className = 'output-line';
@@ -144,10 +129,7 @@ const codeLines = [
       previewEl.appendChild(out);
       i++;
       setTimeout(next, 350);
-    } else {
-      i++;
-      next();
-    }
+    } else { i++; next(); }
   }
   next();
 })();
@@ -163,14 +145,12 @@ const codeLines = [
     const rows = Math.max(4, Math.floor(height / cell));
     const count = Math.max(8, Math.min(26, Math.floor((width * height) / 42000)));
     const traces = [];
-
     for (let i = 0; i < count; i++) {
       let x = Math.floor(Math.random() * cols) * cell;
       let y = Math.floor(Math.random() * rows) * cell;
       const points = [{ x, y }];
       const steps = 3 + Math.floor(Math.random() * 5);
       let horizontal = Math.random() < 0.5;
-
       for (let s = 0; s < steps; s++) {
         const len = (1 + Math.floor(Math.random() * 3)) * cell;
         if (horizontal) x += Math.random() < 0.5 ? -len : len;
@@ -180,7 +160,6 @@ const codeLines = [
         points.push({ x, y });
         horizontal = !horizontal;
       }
-
       const segLens = [];
       let total = 0;
       for (let p = 0; p < points.length - 1; p++) {
@@ -188,7 +167,6 @@ const codeLines = [
         segLens.push(l);
         total += l;
       }
-
       traces.push({ points, segLens, total, offset: Math.random(), speed: 0.05 + Math.random() * 0.06 });
     }
     return traces;
@@ -211,28 +189,22 @@ const codeLines = [
 
   canvases.forEach((canvas) => {
     const ctx = canvas.getContext('2d');
-    const intensity = canvas.classList.contains('net-canvas--subtle') ? 0.5
-      : canvas.closest('.page-head') ? 0.7
-      : 1;
+    const intensity = canvas.classList.contains('net-canvas--subtle') ? 0.5 : canvas.closest('.page-head') ? 0.7 : 1;
     let width, height, traces;
-
     function resize() {
       const rect = canvas.parentElement.getBoundingClientRect();
       width = canvas.width = rect.width;
       height = canvas.height = rect.height;
       traces = buildTraces(width, height);
     }
-
     function drawStatic() {
       ctx.strokeStyle = 'rgba(6, 137, 161, 0.5)';
       ctx.lineWidth = 1.4;
       ctx.fillStyle = 'rgba(47, 184, 214, 0.7)';
-
       traces.forEach((trace) => {
         ctx.beginPath();
         trace.points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
         ctx.stroke();
-
         trace.points.forEach((p, i) => {
           const r = i === 0 || i === trace.points.length - 1 ? 3 : 2;
           ctx.beginPath();
@@ -241,7 +213,6 @@ const codeLines = [
         });
       });
     }
-
     function drawPulses(timeSec) {
       traces.forEach((trace) => {
         const t = (timeSec * trace.speed + trace.offset) % 1;
@@ -255,7 +226,6 @@ const codeLines = [
         ctx.shadowBlur = 0;
       });
     }
-
     function step(ts) {
       ctx.clearRect(0, 0, width, height);
       ctx.globalAlpha = intensity;
@@ -264,17 +234,13 @@ const codeLines = [
       ctx.globalAlpha = 1;
       if (!prefersReducedMotion) requestAnimationFrame(step);
     }
-
     resize();
     window.addEventListener('resize', resize);
-
     if (prefersReducedMotion) {
       ctx.globalAlpha = intensity;
       drawStatic();
       ctx.globalAlpha = 1;
-    } else {
-      requestAnimationFrame(step);
-    }
+    } else requestAnimationFrame(step);
   });
 })();
 
@@ -289,7 +255,6 @@ if (form) {
     const email = (data.get('email') || '').toString().trim();
     const telefone = (data.get('telefone') || '').toString().trim();
     const mensagem = (data.get('mensagem') || '').toString().trim();
-
     const linhas = [
       `Olá! Meu nome é ${nome || '(não informado)'}.`,
       email ? `E-mail: ${email}` : null,
@@ -297,22 +262,19 @@ if (form) {
       '',
       mensagem,
     ].filter((l) => l !== null);
-
     const texto = encodeURIComponent(linhas.join('\n'));
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${texto}`, '_blank', 'noopener');
   });
 }
 
-/* ---------- scroll reveal animations (.reveal, .reveal-from-left, .reveal-from-right) ---------- */
+/* ---------- scroll reveal animations ---------- */
 (function scrollReveal() {
   const reveals = document.querySelectorAll('.reveal, .reveal-from-left, .reveal-from-right');
   if (!reveals.length) return;
-
   if (prefersReducedMotion) {
     reveals.forEach((el) => el.classList.add('is-visible'));
     return;
   }
-
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -321,6 +283,5 @@ if (form) {
       }
     });
   }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-
   reveals.forEach((el) => observer.observe(el));
 })();
