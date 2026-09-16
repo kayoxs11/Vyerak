@@ -18,7 +18,6 @@
 
 <a class="skip-link" href="#main">Pular para o conteúdo</a>
 
-<!-- ===== HEADER ===== -->
 <header class="site-header" id="top">
   <div class="wrap header-inner">
     <a href="#top" class="brand" aria-label="Vyerak.dev — início">
@@ -45,11 +44,10 @@
 
 <main id="main">
 
-  <!-- ===== HERO ===== -->
   <section class="hero">
     <canvas class="net-canvas" aria-hidden="true"></canvas>
     <div class="wrap hero-inner">
-      <div class="hero-copy">
+      <div class="hero-copy reveal">
         <p class="hero-kicker">Agência de desenvolvimento web em Recife/PE</p>
         <h1>Código bem escrito.<br>Site que funciona de verdade.</h1>
         <p class="hero-sub">A Vyerak desenvolve sites institucionais, landing pages e sistemas web sob medida — rápidos, sólidos e fáceis de manter depois que ficam no ar.</p>
@@ -59,44 +57,64 @@
         </div>
       </div>
 
-      <div class="hero-visual" aria-hidden="true">
-        <div class="terminal">
-          <div class="terminal-bar">
-            <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
-            <span class="terminal-title">vyerak — deploy.sh</span>
-          </div>
-          <pre class="terminal-body" id="terminal-body"></pre>
-        </div>
+<div class="hero-visual reveal reveal-delay-1" aria-hidden="true">
+  <div class="build-preview">
+
+    <!-- LADO ESQUERDO: código -->
+    <div class="code-window">
+      <div class="window-bar">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+        <span class="window-title">vyerak.py</span>
       </div>
+      <pre class="code-body" id="code-body"></pre>
+    </div>
+
+    <!-- LADO DIREITO: resultado -->
+    <div class="preview-window">
+      <div class="window-bar">
+        <span class="dot-live"></span>
+        <span class="window-title">output</span>
+      </div>
+      <div class="preview-body" id="preview-body">
+        <!-- o texto aparece aqui -->
+      </div>
+    </div>
+
+  </div>
+</div>
+  </div>
+</div>
+
     </div>
   </section>
 
-  <!-- ===== PROCESSO ===== -->
   <section class="section section-alt process-section" id="processo">
     <canvas class="net-canvas net-canvas--subtle" aria-hidden="true"></canvas>
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <h2>Processo</h2>
         <p>Do primeiro papo até o site no ar, em quatro etapas.</p>
       </div>
 
       <ol class="process-steps">
-        <li class="process-step">
+        <li class="process-step reveal reveal-delay-1">
           <span class="process-num">01</span>
           <h3>Briefing</h3>
           <p>Entendemos seu negócio, seu público e o que o site precisa resolver.</p>
         </li>
-        <li class="process-step">
+        <li class="process-step reveal reveal-delay-2">
           <span class="process-num">02</span>
           <h3>Design</h3>
           <p>Definimos layout, identidade visual e conteúdo antes de escrever qualquer linha de código.</p>
         </li>
-        <li class="process-step">
+        <li class="process-step reveal reveal-delay-3">
           <span class="process-num">03</span>
           <h3>Desenvolvimento</h3>
           <p>Construímos o site com código limpo, performance e responsividade de verdade.</p>
         </li>
-        <li class="process-step">
+        <li class="process-step reveal reveal-delay-4">
           <span class="process-num">04</span>
           <h3>Deploy &amp; suporte</h3>
           <p>Publicamos, testamos em produção e seguimos disponíveis pra ajustes futuros.</p>
@@ -105,10 +123,9 @@
     </div>
   </section>
 
-  <!-- ===== SERVIÇOS ===== -->
   <section class="section" id="servicos">
     <div class="wrap">
-      <div class="section-head section-head-row">
+      <div class="section-head section-head-row reveal">
         <div>
           <h2>Serviços</h2>
           <p>Cada projeto nasce do que o seu negócio precisa resolver — não de um modelo pronto.</p>
@@ -117,28 +134,28 @@
       </div>
 
       <ul class="service-list">
-        <li class="service-row">
+        <li class="service-row reveal">
           <span class="service-index">01</span>
           <div class="service-content">
             <h3>Sites institucionais</h3>
             <p>Presença online clara e rápida para sua empresa, pensada para carregar bem e passar confiança já no primeiro acesso.</p>
           </div>
         </li>
-        <li class="service-row">
+        <li class="service-row reveal reveal-delay-1">
           <span class="service-index">02</span>
           <div class="service-content">
             <h3>Landing pages</h3>
             <p>Páginas focadas em conversão, para campanhas, lançamentos ou captação de leads, com estrutura pensada pra vender.</p>
           </div>
         </li>
-        <li class="service-row">
+        <li class="service-row reveal reveal-delay-2">
           <span class="service-index">03</span>
           <div class="service-content">
             <h3>Sistemas web sob medida</h3>
             <p>Painéis, cadastros e ferramentas internas construídas em torno do processo real da sua empresa.</p>
           </div>
         </li>
-        <li class="service-row">
+        <li class="service-row reveal reveal-delay-3">
           <span class="service-index">04</span>
           <div class="service-content">
             <h3>Manutenção &amp; suporte</h3>
@@ -149,30 +166,29 @@
     </div>
   </section>
 
-  <!-- ===== PORTFÓLIO ===== -->
   <section class="section section-alt" id="portfolio">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <h2>Portfólio</h2>
         <p>Alguns projetos recentes. <em>(troque pelos seus cases reais assim que tiver)</em></p>
       </div>
 
       <div class="portfolio-grid">
-        <article class="portfolio-card">
+        <article class="portfolio-card reveal">
           <div class="portfolio-thumb" style="--thumb-a:#0689A1;--thumb-b:#043842">
             <span class="portfolio-tag">Projeto exemplo</span>
           </div>
           <h3>Site institucional</h3>
           <p>Landing institucional com foco em geração de contato para uma empresa de serviços.</p>
         </article>
-        <article class="portfolio-card">
+        <article class="portfolio-card reveal reveal-delay-1">
           <div class="portfolio-thumb" style="--thumb-a:#2FB8D6;--thumb-b:#0689A1">
             <span class="portfolio-tag">Projeto exemplo</span>
           </div>
           <h3>Landing page de lançamento</h3>
           <p>Página de conversão para o lançamento de um produto digital.</p>
         </article>
-        <article class="portfolio-card">
+        <article class="portfolio-card reveal reveal-delay-2">
           <div class="portfolio-thumb" style="--thumb-a:#043842;--thumb-b:#0689A1">
             <span class="portfolio-tag">Projeto exemplo</span>
           </div>
@@ -183,14 +199,13 @@
     </div>
   </section>
 
-  <!-- ===== FAQ ===== -->
   <section class="section" id="faq">
     <div class="wrap wrap-narrow">
-      <div class="section-head">
+      <div class="section-head reveal">
         <h2>Perguntas frequentes</h2>
       </div>
 
-      <div class="faq-list">
+      <div class="faq-list reveal">
         <details class="faq-item" open>
           <summary>Quanto tempo leva pra ficar pronto?</summary>
           <p>Depende do escopo. Um site institucional simples costuma levar poucas semanas; sistemas sob medida variam conforme a complexidade. Isso fica claro logo no briefing.</p>
@@ -211,41 +226,84 @@
     </div>
   </section>
 
-  <!-- ===== CONTATO ===== -->
-  <section class="section section-alt" id="contato">
-    <div class="wrap contact-grid">
-      <div class="contact-info">
-        <h2>Vamos conversar sobre o seu projeto</h2>
-        <p>Conta um pouco sobre o que você precisa que a gente responde rápido.</p>
-        <ul class="contact-list">
-          <li><span>WhatsApp</span><a href="https://wa.me/55000000000000" target="_blank" rel="noopener">(00) 00000-0000</a></li>
-          <li><span>E-mail</span><a href="mailto:contato@vyerak.dev">contato@vyerak.dev</a></li>
-          <li><span>Local</span><a>Recife/PE</a></li>
-        </ul>
-      </div>
+ <!-- ===== CONTATO ===== -->
+<section class="section contact-section" id="contato">
+  <div class="wrap contact-layout">
 
+    <!-- Lado esquerdo -->
+    <div class="contact-left reveal">
+      <h1>Solicite seu <span>orçamento</span></h1>
+      <p>Me conte um pouco sobre sua ideia, site ou sistema. Vou analisar o projeto e te responder com uma proposta personalizada.</p>
+
+      <div class="contact-cards">
+        <a href="https://wa.me/558196678368" target="_blank" rel="noopener" class="contact-card">
+          <div class="contact-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </div>
+          <div class="contact-card-text">
+            <span>WhatsApp</span>
+            <strong>(81) 9667-8368</strong>
+          </div>
+        </a>
+
+        <a href="mailto:vyerak.dev@gmail.com" class="contact-card">
+          <div class="contact-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div class="contact-card-text">
+            <span>Email</span>
+            <strong>vyerak.dev@gmail.com</strong>
+          </div>
+        </a>
+
+        <div class="contact-card">
+          <div class="contact-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <div class="contact-card-text">
+            <span>Localização</span>
+            <strong>Recife, PE - Brasil</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lado direito: formulário -->
+    <div class="contact-form-box reveal reveal-delay-1">
+      <h2>Fale com a VYERAK</h2>
       <form class="contact-form" id="contact-form">
         <label>
-          Nome
-          <input type="text" name="nome" required>
+          Nome completo
+          <input type="text" name="nome" placeholder="Seu nome" required>
         </label>
         <label>
-          E-mail
-          <input type="email" name="email" required>
+          Email
+          <input type="email" name="email" placeholder="seu@email.com" required>
         </label>
         <label>
-          Sobre o projeto
-          <textarea name="mensagem" rows="4" required></textarea>
+          Telefone
+          <input type="tel" name="telefone" placeholder="(00) 00000-0000">
         </label>
-        <button type="submit" class="btn btn-primary">Enviar mensagem</button>
-        <p class="form-note">Este formulário ainda não está conectado a um serviço de envio — veja o README do projeto para instruções.</p>
+        <label>
+          Mensagem
+          <textarea name="mensagem" rows="4" placeholder="Conte o que você precisa criar ou melhorar..." required></textarea>
+        </label>
+        <button type="submit" class="btn btn-primary">Enviar pelo WhatsApp</button>
       </form>
     </div>
-  </section>
 
+  </div>
+</section>
 </main>
 
-<!-- ===== FOOTER ===== -->
 <footer class="site-footer">
   <div class="wrap footer-inner">
     <a href="#top" class="brand" aria-label="Vyerak.dev — início">
@@ -264,7 +322,7 @@
   </div>
 </footer>
 
-<a class="whatsapp-fab" href="https://wa.me/55000000000000" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+<a class="whatsapp-fab" href="https://wa.me/558196678368" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
   <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.9 9.9 0 0 0 4.75 1.21h.01c5.46 0 9.9-4.45 9.9-9.91C21.96 6.45 17.5 2 12.04 2Zm5.8 14.06c-.24.68-1.41 1.3-1.96 1.38-.5.08-1.13.11-1.83-.12-.42-.13-.96-.31-1.65-.6-2.9-1.25-4.8-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36h.56c.18 0 .42-.03.65.5.24.57.81 1.98.88 2.13.07.14.11.31.02.5-.09.19-.14.31-.28.47-.14.16-.29.36-.42.48-.14.13-.28.28-.12.55.16.28.71 1.17 1.52 1.89 1.05.93 1.93 1.22 2.21 1.36.28.14.44.12.6-.07.16-.19.68-.79.87-1.06.18-.28.37-.23.62-.14.26.09 1.63.77 1.91.91.28.14.46.21.53.33.07.12.07.68-.17 1.36Z"/></svg>
 </a>
 

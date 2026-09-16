@@ -20,59 +20,98 @@ if (navToggle) {
   });
 }
 
-/* ---------- terminal typewriter ---------- */
+/* ---------- code typewriter ---------- */
+/* ---------- código + output sincronizado ---------- */
 const termLines = [
-  { text: '$ vyerak deploy', cls: '' },
-  { text: '✓ build concluído em 1.8s', cls: 'ok' },
-  { text: '✓ imagens otimizadas', cls: 'ok' },
-  { text: '✓ lighthouse: 98 performance', cls: 'ok' },
-  { text: '✓ site no ar → vyerak.dev', cls: 'ok' },
+  { code: '>>> print("Seja bem-vindo")', output: 'Seja bem-vindo' },
+  { code: '>>> print("à Vyerak.dev")', output: 'à Vyerak.dev' },
+  { code: '>>> projetos = ["sites", "sistemas"]', output: null },
+  { code: '>>> for p in projetos:', output: null },
+  { code: '...     print(f"✓ {p} pronto")', output: null },
+  { code: null, output: '✓ sites pronto' },
+  { code: null, output: '✓ sistemas pronto' },
+  { code: '>>> print("Vamos construir?")', output: 'Vamos construir?' },
 ];
 
-const termEl = document.getElementById('terminal-body');
+const codeEl = document.getElementById('code-body') || document.getElementById('terminal-body');
+const previewEl = document.getElementById('preview-body');
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function typeTerminal() {
-  if (!termEl) return;
+function typeSynced() {
+  if (!codeEl) return;
 
-  if (prefersReducedMotion) {
-    termEl.innerHTML = termLines.map(l => `<span class="${l.cls}">${l.text}</span>`).join('\n');
+  // se não existir preview, só digita o código
+  if (!previewEl) {
+    codeEl.textContent = termLines.filter(l => l.code).map(l => l.code).join('\n');
     return;
   }
 
-  termEl.innerHTML = '';
-  let lineIndex = 0;
-  let charIndex = 0;
+  if (prefersReducedMotion) {
+    codeEl.innerHTML = termLines.filter(l => l.code).map(l => l.code).join('\n');
+    previewEl.innerHTML = termLines.filter(l => l.output).map(l => `<div class="output-line">${l.output}</div>`).join('');
+    return;
+  }
 
-  function typeChar() {
-    if (lineIndex >= termLines.length) {
-      setTimeout(() => { termEl.innerHTML = ''; lineIndex = 0; charIndex = 0; typeChar(); }, 2600);
+  codeEl.innerHTML = '';
+  previewEl.innerHTML = '';
+
+  let i = 0;
+
+  function next() {
+    if (i >= termLines.length) {
+      setTimeout(() => {
+        codeEl.innerHTML = '';
+        previewEl.innerHTML = '';
+        i = 0;
+        next();
+      }, 2800);
       return;
     }
-    const line = termLines[lineIndex];
-    const current = termEl.querySelectorAll('.line');
-    let lineEl = termEl.querySelector(`[data-line="${lineIndex}"]`);
-    if (!lineEl) {
-      lineEl = document.createElement('div');
-      lineEl.className = `line ${line.cls}`;
-      lineEl.dataset.line = String(lineIndex);
-      termEl.appendChild(lineEl);
-    }
-    charIndex++;
-    lineEl.textContent = line.text.slice(0, charIndex);
 
-    if (charIndex >= line.text.length) {
-      lineIndex++;
-      charIndex = 0;
-      setTimeout(typeChar, 260);
+    const line = termLines[i];
+
+    // digita o código
+    if (line.code) {
+      const div = document.createElement('div');
+      codeEl.appendChild(div);
+      let c = 0;
+
+      function typeChar() {
+        c++;
+        div.textContent = line.code.slice(0, c);
+        if (c < line.code.length) {
+          setTimeout(typeChar, 18);
+        } else {
+          // quando termina de digitar, mostra o output
+          if (line.output) {
+            const out = document.createElement('div');
+            out.className = 'output-line';
+            out.textContent = line.output;
+            previewEl.appendChild(out);
+          }
+          i++;
+          setTimeout(next, 350);
+        }
+      }
+      typeChar();
+    } else if (line.output) {
+      // só output (tipo resultado do for)
+      const out = document.createElement('div');
+      out.className = 'output-line';
+      out.textContent = line.output;
+      previewEl.appendChild(out);
+      i++;
+      setTimeout(next, 350);
     } else {
-      setTimeout(typeChar, 22);
+      i++;
+      next();
     }
   }
-  typeChar();
-}
-typeTerminal();
 
+  next();
+}
+
+typeSynced();
 /* ---------- particle network background ---------- */
 (function particleNetwork() {
   const canvases = document.querySelectorAll('.net-canvas');
@@ -142,3 +181,44 @@ if (form) {
     alert('Formulário ainda não conectado a um serviço de envio. Veja o README do projeto para instruções de configuração (ex: Formspree, EmailJS ou uma rota de API).');
   });
 }
+
+/* ---------- scroll reveal animations ---------- */
+(function () {
+  const reveals = document.querySelectorAll('.reveal');
+  if (!reveals.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        // opcional: para de observar depois que animou
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.12,
+    rootMargin: '0px 0px -40px 0px'
+  });
+
+  reveals.forEach(el => observer.observe(el));
+})();
+
+/* ---------- scroll reveal (incluindo laterais) ---------- */
+(function () {
+  const reveals = document.querySelectorAll('.reveal, .reveal-from-left, .reveal-from-right');
+  if (!reveals.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.15,
+    rootMargin: '0px 0px -50px 0px'
+  });
+
+  reveals.forEach(el => observer.observe(el));
+})();
