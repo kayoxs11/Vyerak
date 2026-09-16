@@ -66,6 +66,12 @@ img{ max-width:100%; display:block; }
 
 :focus-visible{ outline:2px solid var(--teal-light); outline-offset:3px; }
 
+.brand-mark {
+  height: 200px;
+  width: auto;
+  display: block;
+}
+
 /* ---------- buttons ---------- */
 .btn{
   display:inline-flex; align-items:center; justify-content:center;
