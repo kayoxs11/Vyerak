@@ -7,62 +7,54 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---------- visual refresh: hero slogan ---------- */
+/* ---------- requested visual direction ---------- */
 const heroHeading = document.querySelector('.hero h1');
 if (heroHeading) {
-  heroHeading.innerHTML = 'Seu negócio merece mais do que um site.<br><span class="hero-slogan-accent">Merece uma presença digital à altura.</span>';
+  heroHeading.innerHTML = 'Seu negócio merece mais do que um site.<br>Merece uma <span class="hero-slogan-accent">presença digital à altura.</span>';
 }
 
-/* ---------- visual refresh: header transparent at the top ---------- */
 const header = document.querySelector('.site-header');
-function updateHeaderState() {
-  if (!header) return;
-  header.classList.toggle('is-scrolled', window.scrollY > 24);
+if (header) {
+  const syncHeader = () => header.classList.toggle('is-scrolled', window.scrollY > 24);
+  syncHeader();
+  window.addEventListener('scroll', syncHeader, { passive: true });
 }
-updateHeaderState();
-window.addEventListener('scroll', updateHeaderState, { passive: true });
 
-/* ---------- inject visual-only styles ---------- */
 const visualStyle = document.createElement('style');
 visualStyle.textContent = `
-  .site-header{
-    background:transparent;
-    border-bottom-color:transparent;
-    backdrop-filter:none;
-    -webkit-backdrop-filter:none;
-    transition:background .28s ease, border-color .28s ease, backdrop-filter .28s ease;
+  .site-header {
+    background: transparent;
+    border-bottom-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: background .3s ease, border-color .3s ease, backdrop-filter .3s ease;
   }
-  .site-header.is-scrolled{
-    background:rgba(7,9,10,.82);
-    border-bottom-color:var(--line);
-    backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
+  .site-header.is-scrolled {
+    background: rgba(7,9,10,.86);
+    border-bottom-color: var(--line);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
-  .hero-slogan-accent{
-    color:var(--teal-light);
-    display:inline-block;
+  .hero-slogan-accent {
+    color: var(--teal-light);
   }
-  .site-background-canvas{
-    position:fixed;
-    inset:0;
-    width:100%;
-    height:100%;
-    z-index:0;
-    pointer-events:none;
-    opacity:.72;
-  }
-  body > *:not(.site-background-canvas){
-    position:relative;
-  }
-  .site-header{ z-index:100; }
-  .site-background-canvas + *{ z-index:1; }
-  .net-canvas{ opacity:.18; }
-  @media (max-width:760px){
-    .hero-slogan-accent{ display:inline; }
-    .site-background-canvas{ opacity:.55; }
+  .net-canvas {
+    pointer-events: none;
   }
 `;
 document.head.appendChild(visualStyle);
+
+/* Put the same circuit-board animation on every main section that does not
+   already have one. The original per-section animation is intentionally kept
+   intact so the visual language remains exactly the same as the reference. */
+document.querySelectorAll('main > section').forEach(section => {
+  if (!section.querySelector(':scope > .net-canvas')) {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'net-canvas net-canvas--subtle';
+    canvas.setAttribute('aria-hidden', 'true');
+    section.prepend(canvas);
+  }
+});
 
 /* ---------- mobile nav ---------- */
 const navToggle = document.getElementById('nav-toggle');
@@ -160,101 +152,130 @@ const codeLines = [
   next();
 })();
 
-/* ---------- global animated network background ---------- */
-(function globalNetworkBackground() {
-  if (document.querySelector('.site-background-canvas')) return;
+/* ---------- circuit-board background (traces + traveling light pulses) ---------- */
+(function circuitBoard() {
+  const canvases = document.querySelectorAll('.net-canvas');
+  if (!canvases.length) return;
 
-  const canvas = document.createElement('canvas');
-  canvas.className = 'site-background-canvas';
-  canvas.setAttribute('aria-hidden', 'true');
-  document.body.prepend(canvas);
+  function buildTraces(width, height) {
+    const cell = 46;
+    const cols = Math.max(4, Math.floor(width / cell));
+    const rows = Math.max(4, Math.floor(height / cell));
+    const count = Math.max(8, Math.min(26, Math.floor((width * height) / 42000)));
+    const traces = [];
 
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+    for (let i = 0; i < count; i++) {
+      let x = Math.floor(Math.random() * cols) * cell;
+      let y = Math.floor(Math.random() * rows) * cell;
+      const points = [{ x, y }];
+      const steps = 3 + Math.floor(Math.random() * 5);
+      let horizontal = Math.random() < 0.5;
 
-  let width = 0;
-  let height = 0;
-  let nodes = [];
-  let dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-  function makeNodes() {
-    const area = width * height;
-    const count = Math.max(28, Math.min(75, Math.floor(area / 24000)));
-    nodes = Array.from({ length: count }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - .5) * .18,
-      vy: (Math.random() - .5) * .18,
-      r: Math.random() * 1.5 + 1,
-      pulse: Math.random() * Math.PI * 2
-    }));
-  }
-
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = Math.floor(width * dpr);
-    canvas.height = Math.floor(height * dpr);
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    makeNodes();
-  }
-
-  function draw(time) {
-    ctx.clearRect(0, 0, width, height);
-
-    const linkDistance = width < 760 ? 125 : 165;
-    const t = time * 0.001;
-
-    for (const node of nodes) {
-      if (!prefersReducedMotion) {
-        node.x += node.vx;
-        node.y += node.vy;
-        if (node.x < -20 || node.x > width + 20) node.vx *= -1;
-        if (node.y < -20 || node.y > height + 20) node.vy *= -1;
+      for (let s = 0; s < steps; s++) {
+        const len = (1 + Math.floor(Math.random() * 3)) * cell;
+        if (horizontal) x += Math.random() < 0.5 ? -len : len;
+        else y += Math.random() < 0.5 ? -len : len;
+        x = Math.min(Math.max(x, 0), cols * cell);
+        y = Math.min(Math.max(y, 0), rows * cell);
+        points.push({ x, y });
+        horizontal = !horizontal;
       }
+
+      const segLens = [];
+      let total = 0;
+      for (let p = 0; p < points.length - 1; p++) {
+        const l = Math.hypot(points[p + 1].x - points[p].x, points[p + 1].y - points[p].y);
+        segLens.push(l);
+        total += l;
+      }
+
+      traces.push({ points, segLens, total, offset: Math.random(), speed: 0.05 + Math.random() * 0.06 });
+    }
+    return traces;
+  }
+
+  function pointAtT(trace, t) {
+    const target = t * trace.total;
+    let acc = 0;
+    for (let i = 0; i < trace.segLens.length; i++) {
+      const segLen = trace.segLens[i];
+      if (target <= acc + segLen || i === trace.segLens.length - 1) {
+        const segT = segLen === 0 ? 0 : (target - acc) / segLen;
+        const p0 = trace.points[i], p1 = trace.points[i + 1];
+        return { x: p0.x + (p1.x - p0.x) * segT, y: p0.y + (p1.y - p0.y) * segT };
+      }
+      acc += segLen;
+    }
+    return trace.points[trace.points.length - 1];
+  }
+
+  canvases.forEach((canvas) => {
+    const ctx = canvas.getContext('2d');
+    const intensity = canvas.classList.contains('net-canvas--subtle') ? 0.5
+      : canvas.closest('.page-head') ? 0.7
+      : 1;
+    let width, height, traces;
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      width = canvas.width = rect.width;
+      height = canvas.height = rect.height;
+      traces = buildTraces(width, height);
     }
 
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i], b = nodes[j];
-        const dx = a.x - b.x;
-        const dy = a.y - b.y;
-        const distance = Math.hypot(dx, dy);
-        if (distance < linkDistance) {
-          const alpha = (1 - distance / linkDistance) * 0.18;
-          ctx.strokeStyle = `rgba(47,184,214,${alpha})`;
-          ctx.lineWidth = 1;
+    function drawStatic() {
+      ctx.strokeStyle = 'rgba(6, 137, 161, 0.5)';
+      ctx.lineWidth = 1.4;
+      ctx.fillStyle = 'rgba(47, 184, 214, 0.7)';
+
+      traces.forEach((trace) => {
+        ctx.beginPath();
+        trace.points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+        ctx.stroke();
+
+        trace.points.forEach((p, i) => {
+          const r = i === 0 || i === trace.points.length - 1 ? 3 : 2;
           ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.stroke();
-        }
-      }
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
     }
 
-    for (const node of nodes) {
-      const glow = 0.42 + Math.sin(t * 1.5 + node.pulse) * 0.12;
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(47,184,214,${glow})`;
-      ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
-      ctx.fill();
+    function drawPulses(timeSec) {
+      traces.forEach((trace) => {
+        const t = (timeSec * trace.speed + trace.offset) % 1;
+        const pos = pointAtT(trace, t);
+        ctx.beginPath();
+        ctx.fillStyle = '#2FB8D6';
+        ctx.shadowColor = 'rgba(47, 184, 214, 0.95)';
+        ctx.shadowBlur = 10;
+        ctx.arc(pos.x, pos.y, 2.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
     }
 
-    if (!prefersReducedMotion) requestAnimationFrame(draw);
-  }
+    function step(ts) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalAlpha = intensity;
+      drawStatic();
+      drawPulses(ts / 1000);
+      ctx.globalAlpha = 1;
+      if (!prefersReducedMotion) requestAnimationFrame(step);
+    }
 
-  resize();
-  window.addEventListener('resize', resize, { passive: true });
+    resize();
+    window.addEventListener('resize', resize);
 
-  // The global canvas replaces the section-specific versions so the same
-  // visual language continues uninterrupted across the whole site.
-  document.querySelectorAll('.net-canvas').forEach(c => { c.style.display = 'none'; });
-
-  if (prefersReducedMotion) draw(0);
-  else requestAnimationFrame(draw);
+    if (prefersReducedMotion) {
+      ctx.globalAlpha = intensity;
+      drawStatic();
+      ctx.globalAlpha = 1;
+    } else {
+      requestAnimationFrame(step);
+    }
+  });
 })();
 
 /* ---------- contact form → opens WhatsApp with the message pre-filled ---------- */
@@ -282,7 +303,7 @@ if (form) {
   });
 }
 
-/* ---------- scroll reveal animations ---------- */
+/* ---------- scroll reveal animations (.reveal, .reveal-from-left, .reveal-from-right) ---------- */
 (function scrollReveal() {
   const reveals = document.querySelectorAll('.reveal, .reveal-from-left, .reveal-from-right');
   if (!reveals.length) return;
