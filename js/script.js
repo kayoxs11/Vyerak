@@ -45,9 +45,9 @@ visualStyle.textContent = `
   }
   .hero-slogan-accent { color: var(--teal-light); }
 
-  /* One single canvas follows the viewport instead of restarting at each section. */
+  /* One viewport-sized layer: it never restarts when the user changes section. */
   .net-canvas { display: none !important; }
-  .global-circuit-canvas {
+  .global-network-canvas {
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -139,10 +139,10 @@ const codeLines = [
   next();
 })();
 
-/* ---------- seamless global circuit-board animation ---------- */
-(function globalCircuitBoard() {
+/* ---------- reference-style animated network background ---------- */
+(function globalNetworkBackground() {
   const canvas = document.createElement('canvas');
-  canvas.className = 'global-circuit-canvas';
+  canvas.className = 'global-network-canvas';
   canvas.setAttribute('aria-hidden', 'true');
   document.body.prepend(canvas);
 
@@ -152,67 +152,19 @@ const codeLines = [
   let width = 0;
   let height = 0;
   let dpr = 1;
-  let traces = [];
+  let nodes = [];
 
-  function buildTraces() {
-    const cell = 46;
-    const cols = Math.max(4, Math.ceil(width / cell));
-    const rows = Math.max(4, Math.ceil(height / cell));
-    const count = Math.max(10, Math.min(28, Math.floor((width * height) / 42000)));
-    traces = [];
-
-    for (let i = 0; i < count; i++) {
-      let x = Math.floor(Math.random() * cols) * cell;
-      let y = Math.floor(Math.random() * rows) * cell;
-      const points = [{ x, y }];
-      const steps = 3 + Math.floor(Math.random() * 5);
-      let horizontal = Math.random() < 0.5;
-
-      for (let s = 0; s < steps; s++) {
-        const len = (1 + Math.floor(Math.random() * 3)) * cell;
-        if (horizontal) x += Math.random() < 0.5 ? -len : len;
-        else y += Math.random() < 0.5 ? -len : len;
-        x = Math.min(Math.max(x, 0), cols * cell);
-        y = Math.min(Math.max(y, 0), rows * cell);
-        points.push({ x, y });
-        horizontal = !horizontal;
-      }
-
-      const segLens = [];
-      let total = 0;
-      for (let p = 0; p < points.length - 1; p++) {
-        const len = Math.hypot(points[p + 1].x - points[p].x, points[p + 1].y - points[p].y);
-        segLens.push(len);
-        total += len;
-      }
-
-      traces.push({
-        points,
-        segLens,
-        total,
-        offset: Math.random(),
-        speed: 0.05 + Math.random() * 0.06
-      });
-    }
-  }
-
-  function pointAtT(trace, t) {
-    const target = t * trace.total;
-    let acc = 0;
-    for (let i = 0; i < trace.segLens.length; i++) {
-      const segLen = trace.segLens[i];
-      if (target <= acc + segLen || i === trace.segLens.length - 1) {
-        const segT = segLen === 0 ? 0 : (target - acc) / segLen;
-        const p0 = trace.points[i];
-        const p1 = trace.points[i + 1];
-        return {
-          x: p0.x + (p1.x - p0.x) * segT,
-          y: p0.y + (p1.y - p0.y) * segT
-        };
-      }
-      acc += segLen;
-    }
-    return trace.points[trace.points.length - 1];
+  function createNodes() {
+    const area = width * height;
+    const count = Math.max(32, Math.min(68, Math.floor(area / 27000)));
+    nodes = Array.from({ length: count }, (_, index) => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.10,
+      vy: (Math.random() - 0.5) * 0.10,
+      radius: index % 5 === 0 ? 2.1 : 1.35,
+      phase: Math.random() * Math.PI * 2
+    }));
   }
 
   function resize() {
@@ -224,53 +176,66 @@ const codeLines = [
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    buildTraces();
+    createNodes();
   }
 
-  function draw(ts) {
+  function draw(time) {
     ctx.clearRect(0, 0, width, height);
-    ctx.globalAlpha = 0.72;
 
-    ctx.strokeStyle = 'rgba(6, 137, 161, 0.5)';
-    ctx.lineWidth = 1.4;
-    ctx.fillStyle = 'rgba(47, 184, 214, 0.7)';
+    const t = time * 0.00045;
+    const linkDistance = width < 760 ? 135 : 175;
 
-    for (const trace of traces) {
-      ctx.beginPath();
-      trace.points.forEach((p, i) => {
-        if (i === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      });
-      ctx.stroke();
+    /* Very subtle red atmosphere, like the reference, without tinting the page. */
+    const glow = ctx.createRadialGradient(width * 0.78, height * 0.08, 0, width * 0.78, height * 0.08, width * 0.48);
+    glow.addColorStop(0, 'rgba(255, 0, 0, 0.055)');
+    glow.addColorStop(1, 'rgba(255, 0, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
 
-      trace.points.forEach((p, i) => {
-        const r = i === 0 || i === trace.points.length - 1 ? 3 : 2;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fill();
-      });
+    if (!prefersReducedMotion) {
+      for (const node of nodes) {
+        node.x += node.vx;
+        node.y += node.vy;
+        if (node.x < -30 || node.x > width + 30) node.vx *= -1;
+        if (node.y < -30 || node.y > height + 30) node.vy *= -1;
+      }
     }
 
-    const timeSec = ts / 1000;
-    for (const trace of traces) {
-      const t = (timeSec * trace.speed + trace.offset) % 1;
-      const pos = pointAtT(trace, t);
+    /* Thin, sparse connections. */
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i];
+        const b = nodes[j];
+        const distance = Math.hypot(a.x - b.x, a.y - b.y);
+        if (distance < linkDistance) {
+          const alpha = (1 - distance / linkDistance) * 0.18;
+          ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+          ctx.lineWidth = 0.75;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    /* Small red points with restrained breathing glow. */
+    for (const node of nodes) {
+      const pulse = 0.48 + Math.sin(t + node.phase) * 0.16;
       ctx.beginPath();
-      ctx.fillStyle = '#2FB8D6';
-      ctx.shadowColor = 'rgba(47, 184, 214, 0.95)';
-      ctx.shadowBlur = 10;
-      ctx.arc(pos.x, pos.y, 2.6, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 0, 0, ${pulse})`;
+      ctx.shadowColor = 'rgba(255, 0, 0, 0.72)';
+      ctx.shadowBlur = node.radius > 2 ? 8 : 4;
+      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
     }
 
-    ctx.globalAlpha = 1;
     if (!prefersReducedMotion) requestAnimationFrame(draw);
   }
 
   resize();
   window.addEventListener('resize', resize, { passive: true });
-
   if (prefersReducedMotion) draw(0);
   else requestAnimationFrame(draw);
 })();
