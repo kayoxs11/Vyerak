@@ -45,7 +45,7 @@ visualStyle.textContent = `
   }
   .hero-slogan-accent { color: var(--teal-light); }
 
-  /* The reference animation is a single fixed layer shared by the whole page. */
+  /* One fixed PCB layer shared by every section. */
   .net-canvas { display: none !important; }
   .global-circuit-canvas {
     position: fixed;
@@ -139,7 +139,7 @@ const codeLines = [
   next();
 })();
 
-/* ---------- reference-style animated circuit board ---------- */
+/* ---------- PCB / printed-circuit animated background ---------- */
 (function globalCircuitBoard() {
   const canvas = document.createElement('canvas');
   canvas.className = 'global-circuit-canvas';
@@ -155,87 +155,116 @@ const codeLines = [
   let traces = [];
   let pulses = [];
 
-  /*
-   * The reference uses a PCB / circuit-board pattern: long thin 90-degree
-   * traces, many small junction dots, and only a few moving cyan lights.
-   * The geometry is generated once and remains stable while scrolling.
-   */
-  function buildTraces() {
-    const cell = width < 760 ? 34 : 46;
-    const cols = Math.ceil(width / cell) + 2;
-    const rows = Math.ceil(height / cell) + 2;
-    const count = Math.max(18, Math.min(42, Math.floor((width * height) / 19000)));
-    traces = [];
+  function addTrace(points, speed = null) {
+    const lengths = [];
+    let total = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+      const a = points[i];
+      const b = points[i + 1];
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      lengths.push(len);
+      total += len;
+    }
+    traces.push({ points, lengths, total });
+    if (total > 0 && speed !== null) {
+      pulses.push({ trace: traces[traces.length - 1], offset: Math.random(), speed });
+    }
+  }
 
-    for (let i = 0; i < count; i++) {
-      let gx = Math.floor(Math.random() * cols) - 1;
-      let gy = Math.floor(Math.random() * rows) - 1;
-      let x = gx * cell;
-      let y = gy * cell;
+  /*
+   * Build actual PCB-style traces. Paths only turn at 90 degrees and stay
+   * aligned to a grid, so they look like tracks etched into a circuit board.
+   */
+  function buildBoard() {
+    const cell = width < 760 ? 34 : 48;
+    const cols = Math.ceil(width / cell) + 3;
+    const rows = Math.ceil(height / cell) + 3;
+    traces = [];
+    pulses = [];
+
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const snap = n => Math.round(n / cell) * cell;
+
+    /* Long, sparse primary traces. */
+    const primaryCount = Math.max(16, Math.min(28, Math.floor(width * height / 30000)));
+    for (let i = 0; i < primaryCount; i++) {
+      let x = snap((Math.random() * width) - cell);
+      let y = snap((Math.random() * height) - cell);
       const points = [{ x, y }];
-      const steps = 3 + Math.floor(Math.random() * 6);
+      const turns = 2 + Math.floor(Math.random() * 4);
       let horizontal = Math.random() < 0.5;
 
-      for (let s = 0; s < steps; s++) {
-        const length = (1 + Math.floor(Math.random() * 3)) * cell;
-        if (horizontal) x += Math.random() < 0.5 ? -length : length;
-        else y += Math.random() < 0.5 ? -length : length;
+      for (let t = 0; t < turns; t++) {
+        const distance = (1 + Math.floor(Math.random() * 4)) * cell;
+        if (horizontal) x += Math.random() < 0.5 ? -distance : distance;
+        else y += Math.random() < 0.5 ? -distance : distance;
+        x = clamp(x, -cell, width + cell);
+        y = clamp(y, -cell, height + cell);
         points.push({ x, y });
         horizontal = !horizontal;
       }
 
-      traces.push({ points });
+      addTrace(points, i % 3 === 0 ? 0.045 + Math.random() * 0.025 : null);
     }
 
-    /* Add a second set of shorter traces to reproduce the dense detail. */
-    const shortCount = Math.max(12, Math.min(28, Math.floor((width * height) / 30000)));
-    for (let i = 0; i < shortCount; i++) {
-      const x = (Math.floor(Math.random() * cols) - 1) * cell;
-      const y = (Math.floor(Math.random() * rows) - 1) * cell;
+    /* Short branches create the characteristic dense PCB detail. */
+    const branchCount = Math.max(24, Math.min(48, Math.floor(width * height / 18000)));
+    for (let i = 0; i < branchCount; i++) {
+      const x = snap(Math.random() * width);
+      const y = snap(Math.random() * height);
       const horizontal = Math.random() < 0.5;
-      const length1 = (1 + Math.floor(Math.random() * 3)) * cell;
-      const length2 = (1 + Math.floor(Math.random() * 2)) * cell;
+      const first = (1 + Math.floor(Math.random() * 3)) * cell;
+      const second = (1 + Math.floor(Math.random() * 2)) * cell;
+      const direction = Math.random() < 0.5 ? -1 : 1;
       const points = [{ x, y }];
+
       if (horizontal) {
-        points.push({ x: x + length1, y });
-        points.push({ x: x + length1, y: y + (Math.random() < 0.5 ? length2 : -length2) });
+        points.push({ x: clamp(x + first * direction, -cell, width + cell), y });
+        points.push({
+          x: clamp(x + first * direction, -cell, width + cell),
+          y: clamp(y + second * (Math.random() < 0.5 ? -1 : 1), -cell, height + cell)
+        });
       } else {
-        points.push({ x, y: y + length1 });
-        points.push({ x: x + (Math.random() < 0.5 ? length2 : -length2), y: y + length1 });
+        points.push({ x, y: clamp(y + first * direction, -cell, height + cell) });
+        points.push({
+          x: clamp(x + second * (Math.random() < 0.5 ? -1 : 1), -cell, width + cell),
+          y: clamp(y + first * direction, -cell, height + cell)
+        });
       }
-      traces.push({ points });
+
+      addTrace(points, i % 7 === 0 ? 0.04 + Math.random() * 0.022 : null);
     }
 
-    pulses = [];
-    traces.forEach((trace, traceIndex) => {
-      if (traceIndex % 3 !== 0) return;
-      let total = 0;
-      const lengths = [];
-      for (let i = 0; i < trace.points.length - 1; i++) {
-        const a = trace.points[i];
-        const b = trace.points[i + 1];
-        const len = Math.hypot(b.x - a.x, b.y - a.y);
-        lengths.push(len);
-        total += len;
-      }
-      pulses.push({ trace, lengths, total, offset: Math.random(), speed: 0.018 + Math.random() * 0.018 });
-    });
+    /* A few tiny terminal traces, like pads around components. */
+    const terminalCount = Math.max(18, Math.min(36, Math.floor(width * height / 25000)));
+    for (let i = 0; i < terminalCount; i++) {
+      const x = snap(Math.random() * width);
+      const y = snap(Math.random() * height);
+      const horizontal = Math.random() < 0.5;
+      const distance = cell * (1 + Math.floor(Math.random() * 2));
+      addTrace(horizontal
+        ? [{ x, y }, { x: x + (Math.random() < 0.5 ? -distance : distance), y }]
+        : [{ x, y }, { x, y: y + (Math.random() < 0.5 ? -distance : distance) }], null);
+    }
   }
 
-  function pointAt(traceData, t) {
-    const target = t * traceData.total;
+  function pointAt(trace, progress) {
+    const target = progress * trace.total;
     let passed = 0;
-    for (let i = 0; i < traceData.lengths.length; i++) {
-      const len = traceData.lengths[i];
-      if (target <= passed + len || i === traceData.lengths.length - 1) {
+    for (let i = 0; i < trace.lengths.length; i++) {
+      const len = trace.lengths[i];
+      if (target <= passed + len || i === trace.lengths.length - 1) {
         const local = len ? (target - passed) / len : 0;
-        const a = traceData.trace.points[i];
-        const b = traceData.trace.points[i + 1];
-        return { x: a.x + (b.x - a.x) * local, y: a.y + (b.y - a.y) * local };
+        const a = trace.points[i];
+        const b = trace.points[i + 1];
+        return {
+          x: a.x + (b.x - a.x) * local,
+          y: a.y + (b.y - a.y) * local
+        };
       }
       passed += len;
     }
-    return traceData.trace.points[traceData.trace.points.length - 1];
+    return trace.points[trace.points.length - 1];
   }
 
   function resize() {
@@ -247,56 +276,76 @@ const codeLines = [
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    buildTraces();
+    buildBoard();
   }
 
   function draw(time) {
     ctx.clearRect(0, 0, width, height);
 
-    /* Deep, almost-black teal atmosphere from the reference. */
-    const atmosphere = ctx.createRadialGradient(width * 0.72, height * 0.12, 0, width * 0.72, height * 0.12, width * 0.68);
-    atmosphere.addColorStop(0, 'rgba(12, 69, 77, 0.18)');
-    atmosphere.addColorStop(0.55, 'rgba(7, 38, 44, 0.06)');
+    /* Nearly-black background with only a very subtle teal atmosphere. */
+    const atmosphere = ctx.createRadialGradient(
+      width * 0.56, height * 0.45, 0,
+      width * 0.56, height * 0.45, Math.max(width, height) * 0.72
+    );
+    atmosphere.addColorStop(0, 'rgba(4, 31, 36, 0.10)');
+    atmosphere.addColorStop(0.65, 'rgba(2, 16, 19, 0.035)');
     atmosphere.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = atmosphere;
     ctx.fillRect(0, 0, width, height);
 
-    /* Hairline traces — visible but deliberately subdued. */
+    /* Thin teal PCB tracks. */
     ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(29, 135, 149, 0.23)';
-    ctx.fillStyle = 'rgba(47, 184, 214, 0.62)';
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+    ctx.strokeStyle = 'rgba(34, 157, 171, 0.27)';
 
     for (const trace of traces) {
       ctx.beginPath();
-      trace.points.forEach((p, index) => {
-        if (index === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
+      trace.points.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
       });
       ctx.stroke();
 
-      for (const p of trace.points) {
+      /* PCB pads / junctions at every corner and endpoint. */
+      for (const point of trace.points) {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 1.65, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(47, 184, 214, 0.54)';
+        ctx.arc(point.x, point.y, 1.45, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
-    /* A small number of traveling cyan lights, matching the reference. */
+    /* Small fixed bright pads — like LEDs/components on the board. */
+    const phase = time * 0.001;
+    for (let i = 0; i < traces.length; i += 9) {
+      const trace = traces[i];
+      const point = trace.points[trace.points.length - 1];
+      const pulse = 0.42 + Math.sin(phase * 1.4 + i) * 0.16;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(61, 205, 226, ${pulse})`;
+      ctx.shadowColor = 'rgba(47, 184, 214, 0.55)';
+      ctx.shadowBlur = 5;
+      ctx.arc(point.x, point.y, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    /* Traveling pulses: a few cyan lights run along the actual tracks. */
     if (!prefersReducedMotion) {
       for (const pulse of pulses) {
-        const t = (time * 0.001 * pulse.speed + pulse.offset) % 1;
-        const pos = pointAt(pulse, t);
+        const progress = (pulse.offset + time * 0.001 * pulse.speed) % 1;
+        const point = pointAt(pulse.trace, progress);
         ctx.beginPath();
-        ctx.fillStyle = 'rgba(47, 184, 214, 0.95)';
-        ctx.shadowColor = 'rgba(47, 184, 214, 0.8)';
-        ctx.shadowBlur = 7;
-        ctx.arc(pos.x, pos.y, 2.25, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(72, 218, 239, 0.98)';
+        ctx.shadowColor = 'rgba(47, 184, 214, 0.95)';
+        ctx.shadowBlur = 10;
+        ctx.arc(point.x, point.y, 2.15, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
       }
     }
 
-    ctx.fillStyle = 'rgba(47, 184, 214, 0.62)';
     if (!prefersReducedMotion) requestAnimationFrame(draw);
   }
 
