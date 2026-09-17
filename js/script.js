@@ -13,6 +13,7 @@ if (heroHeading) {
   heroHeading.innerHTML = 'Seu negócio merece mais do que um site.<br>Merece uma <span class="hero-slogan-accent">presença digital à altura.</span>';
 }
 
+/* ---------- header: transparent at entry, solid on scroll ---------- */
 const header = document.querySelector('.site-header');
 if (header) {
   const syncHeader = () => header.classList.toggle('is-scrolled', window.scrollY > 24);
@@ -23,37 +24,41 @@ if (header) {
 const visualStyle = document.createElement('style');
 visualStyle.textContent = `
   .site-header {
-    background: transparent;
-    border-bottom-color: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    transition: background .3s ease, border-color .3s ease, backdrop-filter .3s ease;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 100;
+    background: transparent !important;
+    border-bottom-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: background .3s ease, border-color .3s ease, backdrop-filter .3s ease, box-shadow .3s ease;
   }
   .site-header.is-scrolled {
-    background: rgba(7,9,10,.86);
-    border-bottom-color: var(--line);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(7,9,10,.86) !important;
+    border-bottom-color: var(--line) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,.18);
   }
   .hero-slogan-accent { color: var(--teal-light); }
-  .net-canvas { pointer-events: none; }
-  .section { position: relative; overflow: hidden; }
-  .section > .wrap { position: relative; z-index: 2; }
-  .section > .net-canvas { z-index: 0; }
-  .hero > .net-canvas, .page-head > .net-canvas, .process-section > .net-canvas { z-index: 0; }
+
+  /* One single canvas follows the viewport instead of restarting at each section. */
+  .net-canvas { display: none !important; }
+  .global-circuit-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+  }
+  main, .site-footer { position: relative; z-index: 1; }
+  .site-header { z-index: 100; }
 `;
 document.head.appendChild(visualStyle);
-
-/* Keep the original circuit-board animation, but extend it to every main
-   section so the background continues through the whole experience. */
-document.querySelectorAll('main > section').forEach(section => {
-  if (!section.querySelector(':scope > .net-canvas')) {
-    const canvas = document.createElement('canvas');
-    canvas.className = 'net-canvas net-canvas--subtle';
-    canvas.setAttribute('aria-hidden', 'true');
-    section.prepend(canvas);
-  }
-});
 
 /* ---------- mobile nav ---------- */
 const navToggle = document.getElementById('nav-toggle');
@@ -134,23 +139,35 @@ const codeLines = [
   next();
 })();
 
-/* ---------- circuit-board background (traces + traveling light pulses) ---------- */
-(function circuitBoard() {
-  const canvases = document.querySelectorAll('.net-canvas');
-  if (!canvases.length) return;
+/* ---------- seamless global circuit-board animation ---------- */
+(function globalCircuitBoard() {
+  const canvas = document.createElement('canvas');
+  canvas.className = 'global-circuit-canvas';
+  canvas.setAttribute('aria-hidden', 'true');
+  document.body.prepend(canvas);
 
-  function buildTraces(width, height) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  let width = 0;
+  let height = 0;
+  let dpr = 1;
+  let traces = [];
+
+  function buildTraces() {
     const cell = 46;
-    const cols = Math.max(4, Math.floor(width / cell));
-    const rows = Math.max(4, Math.floor(height / cell));
-    const count = Math.max(8, Math.min(26, Math.floor((width * height) / 42000)));
-    const traces = [];
+    const cols = Math.max(4, Math.ceil(width / cell));
+    const rows = Math.max(4, Math.ceil(height / cell));
+    const count = Math.max(10, Math.min(28, Math.floor((width * height) / 42000)));
+    traces = [];
+
     for (let i = 0; i < count; i++) {
       let x = Math.floor(Math.random() * cols) * cell;
       let y = Math.floor(Math.random() * rows) * cell;
       const points = [{ x, y }];
       const steps = 3 + Math.floor(Math.random() * 5);
       let horizontal = Math.random() < 0.5;
+
       for (let s = 0; s < steps; s++) {
         const len = (1 + Math.floor(Math.random() * 3)) * cell;
         if (horizontal) x += Math.random() < 0.5 ? -len : len;
@@ -160,16 +177,23 @@ const codeLines = [
         points.push({ x, y });
         horizontal = !horizontal;
       }
+
       const segLens = [];
       let total = 0;
       for (let p = 0; p < points.length - 1; p++) {
-        const l = Math.hypot(points[p + 1].x - points[p].x, points[p + 1].y - points[p].y);
-        segLens.push(l);
-        total += l;
+        const len = Math.hypot(points[p + 1].x - points[p].x, points[p + 1].y - points[p].y);
+        segLens.push(len);
+        total += len;
       }
-      traces.push({ points, segLens, total, offset: Math.random(), speed: 0.05 + Math.random() * 0.06 });
+
+      traces.push({
+        points,
+        segLens,
+        total,
+        offset: Math.random(),
+        speed: 0.05 + Math.random() * 0.06
+      });
     }
-    return traces;
   }
 
   function pointAtT(trace, t) {
@@ -179,69 +203,76 @@ const codeLines = [
       const segLen = trace.segLens[i];
       if (target <= acc + segLen || i === trace.segLens.length - 1) {
         const segT = segLen === 0 ? 0 : (target - acc) / segLen;
-        const p0 = trace.points[i], p1 = trace.points[i + 1];
-        return { x: p0.x + (p1.x - p0.x) * segT, y: p0.y + (p1.y - p0.y) * segT };
+        const p0 = trace.points[i];
+        const p1 = trace.points[i + 1];
+        return {
+          x: p0.x + (p1.x - p0.x) * segT,
+          y: p0.y + (p1.y - p0.y) * segT
+        };
       }
       acc += segLen;
     }
     return trace.points[trace.points.length - 1];
   }
 
-  canvases.forEach((canvas) => {
-    const ctx = canvas.getContext('2d');
-    const intensity = canvas.classList.contains('net-canvas--subtle') ? 0.5 : canvas.closest('.page-head') ? 0.7 : 1;
-    let width, height, traces;
-    function resize() {
-      const rect = canvas.parentElement.getBoundingClientRect();
-      width = canvas.width = rect.width;
-      height = canvas.height = rect.height;
-      traces = buildTraces(width, height);
-    }
-    function drawStatic() {
-      ctx.strokeStyle = 'rgba(6, 137, 161, 0.5)';
-      ctx.lineWidth = 1.4;
-      ctx.fillStyle = 'rgba(47, 184, 214, 0.7)';
-      traces.forEach((trace) => {
-        ctx.beginPath();
-        trace.points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        ctx.stroke();
-        trace.points.forEach((p, i) => {
-          const r = i === 0 || i === trace.points.length - 1 ? 3 : 2;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-          ctx.fill();
-        });
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildTraces();
+  }
+
+  function draw(ts) {
+    ctx.clearRect(0, 0, width, height);
+    ctx.globalAlpha = 0.72;
+
+    ctx.strokeStyle = 'rgba(6, 137, 161, 0.5)';
+    ctx.lineWidth = 1.4;
+    ctx.fillStyle = 'rgba(47, 184, 214, 0.7)';
+
+    for (const trace of traces) {
+      ctx.beginPath();
+      trace.points.forEach((p, i) => {
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
       });
-    }
-    function drawPulses(timeSec) {
-      traces.forEach((trace) => {
-        const t = (timeSec * trace.speed + trace.offset) % 1;
-        const pos = pointAtT(trace, t);
+      ctx.stroke();
+
+      trace.points.forEach((p, i) => {
+        const r = i === 0 || i === trace.points.length - 1 ? 3 : 2;
         ctx.beginPath();
-        ctx.fillStyle = '#2FB8D6';
-        ctx.shadowColor = 'rgba(47, 184, 214, 0.95)';
-        ctx.shadowBlur = 10;
-        ctx.arc(pos.x, pos.y, 2.6, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
       });
     }
-    function step(ts) {
-      ctx.clearRect(0, 0, width, height);
-      ctx.globalAlpha = intensity;
-      drawStatic();
-      drawPulses(ts / 1000);
-      ctx.globalAlpha = 1;
-      if (!prefersReducedMotion) requestAnimationFrame(step);
+
+    const timeSec = ts / 1000;
+    for (const trace of traces) {
+      const t = (timeSec * trace.speed + trace.offset) % 1;
+      const pos = pointAtT(trace, t);
+      ctx.beginPath();
+      ctx.fillStyle = '#2FB8D6';
+      ctx.shadowColor = 'rgba(47, 184, 214, 0.95)';
+      ctx.shadowBlur = 10;
+      ctx.arc(pos.x, pos.y, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
     }
-    resize();
-    window.addEventListener('resize', resize);
-    if (prefersReducedMotion) {
-      ctx.globalAlpha = intensity;
-      drawStatic();
-      ctx.globalAlpha = 1;
-    } else requestAnimationFrame(step);
-  });
+
+    ctx.globalAlpha = 1;
+    if (!prefersReducedMotion) requestAnimationFrame(draw);
+  }
+
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+
+  if (prefersReducedMotion) draw(0);
+  else requestAnimationFrame(draw);
 })();
 
 /* ---------- contact form → opens WhatsApp with the message pre-filled ---------- */
