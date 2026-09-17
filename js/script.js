@@ -45,9 +45,9 @@ visualStyle.textContent = `
   }
   .hero-slogan-accent { color: var(--teal-light); }
 
-  /* One viewport-sized layer: it never restarts when the user changes section. */
+  /* The reference animation is a single fixed layer shared by the whole page. */
   .net-canvas { display: none !important; }
-  .global-network-canvas {
+  .global-circuit-canvas {
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -139,10 +139,10 @@ const codeLines = [
   next();
 })();
 
-/* ---------- reference-style animated network background ---------- */
-(function globalNetworkBackground() {
+/* ---------- reference-style animated circuit board ---------- */
+(function globalCircuitBoard() {
   const canvas = document.createElement('canvas');
-  canvas.className = 'global-network-canvas';
+  canvas.className = 'global-circuit-canvas';
   canvas.setAttribute('aria-hidden', 'true');
   document.body.prepend(canvas);
 
@@ -152,19 +152,90 @@ const codeLines = [
   let width = 0;
   let height = 0;
   let dpr = 1;
-  let nodes = [];
+  let traces = [];
+  let pulses = [];
 
-  function createNodes() {
-    const area = width * height;
-    const count = Math.max(32, Math.min(68, Math.floor(area / 27000)));
-    nodes = Array.from({ length: count }, (_, index) => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.10,
-      vy: (Math.random() - 0.5) * 0.10,
-      radius: index % 5 === 0 ? 2.1 : 1.35,
-      phase: Math.random() * Math.PI * 2
-    }));
+  /*
+   * The reference uses a PCB / circuit-board pattern: long thin 90-degree
+   * traces, many small junction dots, and only a few moving cyan lights.
+   * The geometry is generated once and remains stable while scrolling.
+   */
+  function buildTraces() {
+    const cell = width < 760 ? 34 : 46;
+    const cols = Math.ceil(width / cell) + 2;
+    const rows = Math.ceil(height / cell) + 2;
+    const count = Math.max(18, Math.min(42, Math.floor((width * height) / 19000)));
+    traces = [];
+
+    for (let i = 0; i < count; i++) {
+      let gx = Math.floor(Math.random() * cols) - 1;
+      let gy = Math.floor(Math.random() * rows) - 1;
+      let x = gx * cell;
+      let y = gy * cell;
+      const points = [{ x, y }];
+      const steps = 3 + Math.floor(Math.random() * 6);
+      let horizontal = Math.random() < 0.5;
+
+      for (let s = 0; s < steps; s++) {
+        const length = (1 + Math.floor(Math.random() * 3)) * cell;
+        if (horizontal) x += Math.random() < 0.5 ? -length : length;
+        else y += Math.random() < 0.5 ? -length : length;
+        points.push({ x, y });
+        horizontal = !horizontal;
+      }
+
+      traces.push({ points });
+    }
+
+    /* Add a second set of shorter traces to reproduce the dense detail. */
+    const shortCount = Math.max(12, Math.min(28, Math.floor((width * height) / 30000)));
+    for (let i = 0; i < shortCount; i++) {
+      const x = (Math.floor(Math.random() * cols) - 1) * cell;
+      const y = (Math.floor(Math.random() * rows) - 1) * cell;
+      const horizontal = Math.random() < 0.5;
+      const length1 = (1 + Math.floor(Math.random() * 3)) * cell;
+      const length2 = (1 + Math.floor(Math.random() * 2)) * cell;
+      const points = [{ x, y }];
+      if (horizontal) {
+        points.push({ x: x + length1, y });
+        points.push({ x: x + length1, y: y + (Math.random() < 0.5 ? length2 : -length2) });
+      } else {
+        points.push({ x, y: y + length1 });
+        points.push({ x: x + (Math.random() < 0.5 ? length2 : -length2), y: y + length1 });
+      }
+      traces.push({ points });
+    }
+
+    pulses = [];
+    traces.forEach((trace, traceIndex) => {
+      if (traceIndex % 3 !== 0) return;
+      let total = 0;
+      const lengths = [];
+      for (let i = 0; i < trace.points.length - 1; i++) {
+        const a = trace.points[i];
+        const b = trace.points[i + 1];
+        const len = Math.hypot(b.x - a.x, b.y - a.y);
+        lengths.push(len);
+        total += len;
+      }
+      pulses.push({ trace, lengths, total, offset: Math.random(), speed: 0.018 + Math.random() * 0.018 });
+    });
+  }
+
+  function pointAt(traceData, t) {
+    const target = t * traceData.total;
+    let passed = 0;
+    for (let i = 0; i < traceData.lengths.length; i++) {
+      const len = traceData.lengths[i];
+      if (target <= passed + len || i === traceData.lengths.length - 1) {
+        const local = len ? (target - passed) / len : 0;
+        const a = traceData.trace.points[i];
+        const b = traceData.trace.points[i + 1];
+        return { x: a.x + (b.x - a.x) * local, y: a.y + (b.y - a.y) * local };
+      }
+      passed += len;
+    }
+    return traceData.trace.points[traceData.trace.points.length - 1];
   }
 
   function resize() {
@@ -176,61 +247,56 @@ const codeLines = [
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    createNodes();
+    buildTraces();
   }
 
   function draw(time) {
     ctx.clearRect(0, 0, width, height);
 
-    const t = time * 0.00045;
-    const linkDistance = width < 760 ? 135 : 175;
-
-    /* Very subtle red atmosphere, like the reference, without tinting the page. */
-    const glow = ctx.createRadialGradient(width * 0.78, height * 0.08, 0, width * 0.78, height * 0.08, width * 0.48);
-    glow.addColorStop(0, 'rgba(255, 0, 0, 0.055)');
-    glow.addColorStop(1, 'rgba(255, 0, 0, 0)');
-    ctx.fillStyle = glow;
+    /* Deep, almost-black teal atmosphere from the reference. */
+    const atmosphere = ctx.createRadialGradient(width * 0.72, height * 0.12, 0, width * 0.72, height * 0.12, width * 0.68);
+    atmosphere.addColorStop(0, 'rgba(12, 69, 77, 0.18)');
+    atmosphere.addColorStop(0.55, 'rgba(7, 38, 44, 0.06)');
+    atmosphere.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = atmosphere;
     ctx.fillRect(0, 0, width, height);
 
-    if (!prefersReducedMotion) {
-      for (const node of nodes) {
-        node.x += node.vx;
-        node.y += node.vy;
-        if (node.x < -30 || node.x > width + 30) node.vx *= -1;
-        if (node.y < -30 || node.y > height + 30) node.vy *= -1;
-      }
-    }
+    /* Hairline traces — visible but deliberately subdued. */
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(29, 135, 149, 0.23)';
+    ctx.fillStyle = 'rgba(47, 184, 214, 0.62)';
 
-    /* Thin, sparse connections. */
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i];
-        const b = nodes[j];
-        const distance = Math.hypot(a.x - b.x, a.y - b.y);
-        if (distance < linkDistance) {
-          const alpha = (1 - distance / linkDistance) * 0.18;
-          ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
-          ctx.lineWidth = 0.75;
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.stroke();
-        }
-      }
-    }
-
-    /* Small red points with restrained breathing glow. */
-    for (const node of nodes) {
-      const pulse = 0.48 + Math.sin(t + node.phase) * 0.16;
+    for (const trace of traces) {
       ctx.beginPath();
-      ctx.fillStyle = `rgba(255, 0, 0, ${pulse})`;
-      ctx.shadowColor = 'rgba(255, 0, 0, 0.72)';
-      ctx.shadowBlur = node.radius > 2 ? 8 : 4;
-      ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      trace.points.forEach((p, index) => {
+        if (index === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+
+      for (const p of trace.points) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.65, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
+    /* A small number of traveling cyan lights, matching the reference. */
+    if (!prefersReducedMotion) {
+      for (const pulse of pulses) {
+        const t = (time * 0.001 * pulse.speed + pulse.offset) % 1;
+        const pos = pointAt(pulse, t);
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(47, 184, 214, 0.95)';
+        ctx.shadowColor = 'rgba(47, 184, 214, 0.8)';
+        ctx.shadowBlur = 7;
+        ctx.arc(pos.x, pos.y, 2.25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    ctx.fillStyle = 'rgba(47, 184, 214, 0.62)';
     if (!prefersReducedMotion) requestAnimationFrame(draw);
   }
 
