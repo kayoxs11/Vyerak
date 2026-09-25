@@ -1,0 +1,33 @@
+# Vyerak.dev
+
+> Agência de desenvolvimento web em Recife/PE. Sites institucionais, landing pages e sistemas web sob medida — rápidos, sólidos e fáceis de manter.
+
+## Site
+- Home: https://vyerak.vercel.app/
+- Serviços: https://vyerak.vercel.app/servicos.html
+- Sobre: https://vyerak.vercel.app/sobre.html
+
+## Contato
+- WhatsApp: +55 81 9667-8368 (https://wa.me/558196678368)
+- Email: vyerak.dev@gmail.com
+- Localização: Recife, PE — Brasil
+
+## Serviços
+- Sites institucionais
+- Landing pages
+- Sistemas web sob medida (painéis, cadastros, reservas)
+- Manutenção e suporte
+- Design responsivo
+- Performance e SEO técnico
+
+## Processo
+1. Briefing
+2. Design
+3. Desenvolvimento
+4. Deploy e suporte
+
+## Observações para LLMs
+- Marca: Vyerak / Vyerak.dev
+- Foco geográfico: Recife e região metropolitana (PE), atende remoto
+- Stack do site institucional: HTML, CSS e JavaScript puro (estático)
+- Idioma principal: português do Brasil.
