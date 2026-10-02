@@ -317,12 +317,52 @@ svg{ flex-shrink:0; }
 /* ===========================================================
    FOOTER
 =========================================================== */
-.site-footer{ border-top:1px solid var(--line); padding:40px 0; }
-.footer-inner{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:20px; }
-.footer-nav{ display:flex; gap:20px; flex-wrap:wrap; }
-.footer-nav a{ font-size:.88rem; color:var(--fg-muted); }
+.site-footer{
+  border-top:1px solid var(--line);
+  background:var(--ink-soft);
+  padding:72px 0 0;
+}
+.footer-grid{
+  display:grid;
+  grid-template-columns:1.3fr .85fr 1fr;
+  gap:48px;
+  padding-bottom:56px;
+}
+
+.footer-brand .brand{ margin-bottom:18px; }
+.footer-tagline{ font-size:.94rem; max-width:34ch; margin-bottom:24px; }
+
+.footer-socials{ display:flex; gap:10px; }
+.footer-socials a{
+  width:38px; height:38px; border-radius:9px;
+  background:var(--surface); border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--fg-muted);
+  transition:color .15s ease, border-color .15s ease, transform .15s ease;
+}
+.footer-socials a:hover{ color:var(--teal-light); border-color:var(--teal); transform:translateY(-2px); }
+.footer-socials svg{ width:18px; height:18px; }
+
+.footer-heading{
+  font-family:var(--font-display); font-weight:600; font-size:.92rem;
+  color:var(--fg); margin-bottom:20px; letter-spacing:.01em;
+}
+
+.footer-nav{ display:flex; flex-direction:column; gap:13px; }
+.footer-nav a{ font-size:.92rem; color:var(--fg-muted); width:fit-content; }
 .footer-nav a:hover{ color:var(--teal-light); }
-.footer-copy{ width:100%; margin:0; font-size:.8rem; color:var(--gray); }
+
+.footer-contact{ display:flex; flex-direction:column; gap:14px; }
+.footer-contact li{ display:flex; align-items:center; gap:10px; font-size:.92rem; color:var(--fg-muted); }
+.footer-contact svg{ width:16px; height:16px; color:var(--teal-light); flex-shrink:0; }
+.footer-contact a{ color:var(--fg-muted); }
+.footer-contact a:hover{ color:var(--teal-light); }
+
+.footer-bottom{
+  border-top:1px solid var(--line);
+  padding:22px 0;
+}
+.footer-copy{ margin:0; font-size:.82rem; color:var(--gray); text-align:center; }
 
 .whatsapp-fab{
   position:fixed; right:24px; bottom:24px; z-index:90;
@@ -475,6 +515,8 @@ svg{ flex-shrink:0; }
   .services-grid{ grid-template-columns:repeat(2,1fr); }
   .contact-layout{ grid-template-columns:1fr; }
   .contact-form-box{ max-width:560px; }
+  .footer-grid{ grid-template-columns:1fr 1fr; row-gap:40px; }
+  .footer-brand{ grid-column:1 / -1; }
 }
 
 /* ---- ≤880px: nav collapses to hamburger (covers tablets in portrait) ---- */
@@ -514,6 +556,10 @@ svg{ flex-shrink:0; }
   .timeline-item:nth-child(even) .timeline-card{ grid-column:2; }
 
   .reveal-from-right, .reveal-from-left{ transform:translateY(28px); }
+
+  .footer-grid{ grid-template-columns:1fr; gap:36px; padding-bottom:40px; }
+  .footer-brand{ grid-column:auto; }
+  .site-footer{ padding-top:56px; }
 }
 
 /* ---- ≤680px: contact + header tightened for phones ---- */
