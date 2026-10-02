@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Página não encontrada — Vyerak.dev</title>
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#0689A1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
+  <link rel="apple-touch-icon" href="/assets/favicon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .error-page{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:24px;
+      background:radial-gradient(120% 100% at 85% 0%, rgba(4,56,66,.78) 0%, #07090A 55%);
+    }
+    .error-code{
+      font-family:var(--font-mono, ui-monospace, monospace);
+      color:#2FB8D6;
+      font-size:1rem;
+      margin-bottom:16px;
+    }
+    .error-page h1{
+      font-family:var(--font-display, system-ui, sans-serif);
+      font-size:clamp(1.8rem, 5vw, 2.6rem);
+      margin-bottom:.4em;
+      color:#F2F4F4;
+    }
+    .error-page p{
+      margin:0 auto 32px;
+      color:#B7C0C1;
+      max-width:42ch;
+    }
+    .error-page .brand{ margin-bottom:40px; }
+    .error-page .brand img{ height:32px; width:auto; display:block; }
+  </style>
+</head>
+<body>
+  <div class="error-page">
+    <a href="/" class="brand" aria-label="Vyerak.dev — início">
+      <img src="/assets/mark.png" alt="Vyerak.dev" width="176" height="34">
+    </a>
+    <p class="error-code">Erro 404</p>
+    <h1>Essa página não existe (ainda).</h1>
+    <p>O link pode estar errado ou a página pode ter mudado de endereço.</p>
+    <a href="/" class="btn btn-primary">Voltar para o início</a>
+  </div>
+</body>
+</html>
